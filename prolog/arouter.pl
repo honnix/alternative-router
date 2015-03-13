@@ -1,21 +1,22 @@
 :- module(arouter, [
-    route/1,         % +Request
-    route_get/2,     % +Route, :Goal
-    route_post/2,    % +Route, :Goal
-    route_put/2,     % +Route, :Goal
-    route_del/2,     % +Route, :Goal
-    route_get/3,     % +Route, :BeforeGoal, :Goal
-    route_post/3,    % +Route, :BeforeGoal, :Goal
-    route_put/3,     % +Route, :BeforeGoal, :Goal
-    route_del/3,     % +Route, :BeforeGoal, :Goal
-    routes/3,       % +Route, +Methods, :Goal
-    routes/4,       % +Route, +Methods, :BeforeGoal, :Goal
-    new_route/3,     % +Method, +Route, :Goal
-    new_route/4,     % +Method, +Route, :BeforeGoal, :Goal
-    route_remove/2,  % +Method, +Route
-    route/4,         % ?Method, ?Route, ?Before, ?Goal
-    path_to_route/2, % +Path, -Route
-    request/1        % -Request
+    route/1,                 % +Request
+    route_with_fallbacks/2,  % +Fallbacks, +Request
+    route_get/2,             % +Route, :Goal
+    route_post/2,            % +Route, :Goal
+    route_put/2,             % +Route, :Goal
+    route_del/2,             % +Route, :Goal
+    route_get/3,             % +Route, :BeforeGoal, :Goal
+    route_post/3,            % +Route, :BeforeGoal, :Goal
+    route_put/3,             % +Route, :BeforeGoal, :Goal
+    route_del/3,             % +Route, :BeforeGoal, :Goal
+    routes/3,                % +Route, +Methods, :Goal
+    routes/4,                % +Route, +Methods, :BeforeGoal, :Goal
+    new_route/3,             % +Method, +Route, :Goal
+    new_route/4,             % +Method, +Route, :BeforeGoal, :Goal
+    route_remove/2,          % +Method, +Route
+    route/4,                 % ?Method, ?Route, ?Before, ?Goal
+    path_to_route/2,         % +Path, -Route
+    request/1                % -Request
 ]).
 
 /** <module> Alternative HTTP routing
@@ -262,6 +263,36 @@ route(Request):-
         assertz(request(Request)),
         dispatch(Method, Route),
         retract(request(Request))
+    ).
+
+%! route_with_fallbacks(+Fallbacks, +Request) is semidet.
+%
+% Routes the request into an handler.
+% Fails when no handler is found.
+% Request must contain method(Method)
+% and path(Path).
+% Throws handler_failed(Method, Path) when
+% handler was found but it failed during
+% execution.
+% If no handlers could be found, fallbacks
+% will be called until one succeeds or the
+% whole predict fails.
+
+route_with_fallbacks(Fallbacks, Request):-
+    (   route(Request)
+    ->  true
+    ;   setup_call_cleanup(
+            assertz(request(Request)),
+            try_fallbacks(Fallbacks),
+            retract(request(Request))
+        )
+    ).
+
+try_fallbacks([]):- false.
+try_fallbacks([H|T]):-
+    (   run_handler(H)
+    ->  true
+    ;   try_fallbacks(T)
     ).
 
 %! dispatch(+Method, +Route) is semidet.
