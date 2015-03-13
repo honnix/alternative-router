@@ -248,18 +248,14 @@ remove_refs([]).
 % Routes the request into an handler.
 % Fails when no handler is found.
 % Request must contain method(Method)
-% and either path(Path) or path_info(Path),
-% and path_info(Path) has higher priority.
+% and path(Path).
 % Throws handler_failed(Method, Path) when
 % handler was found but it failed during
 % execution.
     
 route(Request):-
     memberchk(method(Method), Request),
-    (   memberchk(path_info(Path), Request)
-    ->  true
-    ;   memberchk(path(Path), Request)
-    ),
+    memberchk(path(Path), Request),
     path_to_route(Path, Route),
     debug(arouter, 'dispatch: ~p ~p', [Method, Route]),
     setup_call_cleanup(
@@ -297,16 +293,12 @@ run_handler(Handler):-
 
 %! path_to_route(+Path, -Route) is det.
 %
-% Turns path atom like '[/]path/to/something' into
+% Turns path atom like '/path/to/something' into
 % a Prolog term path/to/something.
     
 path_to_route(Path, Route):-    
-    atom_codes(Path, Codes0),
-    (   char_code(/, Code), Codes0 = [Code|Codes]
-    ->  true
-    ;   Codes = Codes0
-    ),
-    phrase(path_tokens(Tokens), Codes),
+    atom_codes(Path, Codes),
+    phrase(path_tokens([/|Tokens]), Codes),
     path_to_route_term(Tokens, Route), !.
     
 path_to_route_term([], /).
