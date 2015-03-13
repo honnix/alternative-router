@@ -8,6 +8,8 @@
     route_post/3,    % +Route, :BeforeGoal, :Goal
     route_put/3,     % +Route, :BeforeGoal, :Goal
     route_del/3,     % +Route, :BeforeGoal, :Goal
+    routes/3,       % +Route, +Methods, :Goal
+    routes/4,       % +Route, +Methods, :BeforeGoal, :Goal
     new_route/3,     % +Method, +Route, :Goal
     new_route/4,     % +Method, +Route, :BeforeGoal, :Goal
     route_remove/2,  % +Method, +Route
@@ -34,10 +36,12 @@ HTTP routing with path expressions.
 :- meta_predicate(route_post(+, 0)).
 :- meta_predicate(route_put(+, 0)).
 :- meta_predicate(route_del(+, 0)).
+:- meta_predicate(routes(+, +, 0)).
 :- meta_predicate(route_get(+, 1, 0)).
 :- meta_predicate(route_post(+, 1, 0)).
 :- meta_predicate(route_put(+, 1, 0)).
 :- meta_predicate(route_del(+, 1, 0)).
+:- meta_predicate(routes(+, +, 1, 0)).
 :- meta_predicate(new_route(+, +, 0)).
 :- meta_predicate(new_route(+, +, 1, 0)).
 
@@ -72,6 +76,14 @@ route_del(Route, Goal):-
 route_post(Route, Goal):-
     new_route(post, Route, Goal).
 
+%! routes(+Route, +Methods, :Goal) is det.
+%
+% Registers new route handlers for all specified
+% Methods.
+
+routes(Route, Methods, Goal) :-
+    foreach(member(X, Methods), new_route(X, Route, Goal)).
+
 %! route_get(+Route, :Before, :Goal) is det.
 %
 % Registers a new GET route handler.
@@ -102,7 +114,16 @@ route_del(Route, Before, Goal):-
 % Accepts Before goal.
     
 route_post(Route, Before, Goal):-
-    new_route(post, Route, Before, Goal).
+    new_route(post, Route, Before, Goal).    
+
+%! routes(+Route, +Methods, :Before, :Goal) is det.
+%
+% Registers route handlers for all specified
+% Methods.
+% Accepts Before goal.
+    
+routes(Route, Methods, Before, Goal):-
+    foreach(member(X, Methods), new_route(X, Route, Before, Goal)).
 
 %! new_route(+Method, +Route, :Before, :Goal) is det.
 %
