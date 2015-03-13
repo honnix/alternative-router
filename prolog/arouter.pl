@@ -1,18 +1,19 @@
 :- module(arouter, [
-    route/1,        % +Request
-    route_get/2,    % +Route, :Goal
-    route_post/2,   % +Route, :Goal
-    route_put/2,    % +Route, :Goal
-    route_del/2,    % +Route, :Goal
-    route_get/3,    % +Route, :BeforeGoal, :Goal
-    route_post/3,   % +Route, :BeforeGoal, :Goal
-    route_put/3,    % +Route, :BeforeGoal, :Goal
-    route_del/3,    % +Route, :BeforeGoal, :Goal
-    new_route/3,    % +Method, +Route, :Goal
-    new_route/4,    % +Method, +Route, :BeforeGoal, :Goal
-    route_remove/2, % +Method, +Route
-    route/4,        % ?Method, ?Route, ?Before, ?Goal
-    path_to_route/2 % +Path, -Route
+    route/1,         % +Request
+    route_get/2,     % +Route, :Goal
+    route_post/2,    % +Route, :Goal
+    route_put/2,     % +Route, :Goal
+    route_del/2,     % +Route, :Goal
+    route_get/3,     % +Route, :BeforeGoal, :Goal
+    route_post/3,    % +Route, :BeforeGoal, :Goal
+    route_put/3,     % +Route, :BeforeGoal, :Goal
+    route_del/3,     % +Route, :BeforeGoal, :Goal
+    new_route/3,     % +Method, +Route, :Goal
+    new_route/4,     % +Method, +Route, :BeforeGoal, :Goal
+    route_remove/2,  % +Method, +Route
+    route/4,         % ?Method, ?Route, ?Before, ?Goal
+    path_to_route/2, % +Path, -Route
+    request/1        % -Request
 ]).
 
 /** <module> Alternative HTTP routing
@@ -39,6 +40,9 @@ HTTP routing with path expressions.
 :- meta_predicate(route_del(+, 1, 0)).
 :- meta_predicate(new_route(+, +, 0)).
 :- meta_predicate(new_route(+, +, 1, 0)).
+
+:- thread_local
+    request/1.
 
 %! route_get(+Route, :Goal) is det.
 %
@@ -235,10 +239,13 @@ route(Request):-
     ->  true
     ;   memberchk(path(Path), Request)
     ),
-    debug(arouter, 'Path: ~p', [Path]),
     path_to_route(Path, Route),
     debug(arouter, 'dispatch: ~p ~p', [Method, Route]),
-    dispatch(Method, Route).
+    setup_call_cleanup(
+        assertz(request(Request)),
+        dispatch(Method, Route),
+        retract(request(Request))
+    ).
 
 %! dispatch(+Method, +Route) is semidet.
 %
