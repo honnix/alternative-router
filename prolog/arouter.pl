@@ -1,19 +1,33 @@
 :- module(arouter, [
     route/1,                 % +Request
+    blueprint/2,             % +Name, +Prefix
     route_with_fallbacks/2,  % +Fallbacks, +Request
     route_get/2,             % +Route, :Goal
     route_post/2,            % +Route, :Goal
     route_put/2,             % +Route, :Goal
     route_del/2,             % +Route, :Goal
+    routes/3,                % +Route, +Methods, :Goal
+    route_get_b/3,           % +Blueprint, +Route, :Goal
+    route_post_b/3,          % +Blueprint, +Route, :Goal
+    route_put_b/3,           % +Blueprint, +Route, :Goal
+    route_del_b/3,           % +Blueprint, +Route, :Goal
+    routes_b/4,              % +Blueprint, +Route, +Methods, :Goal
     route_get/3,             % +Route, :BeforeGoal, :Goal
     route_post/3,            % +Route, :BeforeGoal, :Goal
     route_put/3,             % +Route, :BeforeGoal, :Goal
     route_del/3,             % +Route, :BeforeGoal, :Goal
-    routes/3,                % +Route, +Methods, :Goal
     routes/4,                % +Route, +Methods, :BeforeGoal, :Goal
+    route_get_b/4,           % +Blueprint, +Route, :BeforeGoal, :Goal
+    route_post_b/4,          % +Blueprint, +Route, :BeforeGoal, :Goal
+    route_put_b/4,           % +Blueprint, +Route, :BeforeGoal, :Goal
+    route_del_b/4,           % +Blueprint, +Route, :BeforeGoal, :Goal
+    routes_b/5,              % +Blueprint, +Route, +Methods, :BeforeGoal, :Goal
     new_route/3,             % +Method, +Route, :Goal
     new_route/4,             % +Method, +Route, :BeforeGoal, :Goal
+    new_route_b/4,           % +Blueprint, +Method, +Route, :Goal
+    new_route_b/5,           % +Blueprint, +Method, +Route, :BeforeGoal, :Goal
     route_remove/2,          % +Method, +Route
+    route_remove_b/3,        % +Blueprint, +Method, +Route
     route/4,                 % ?Method, ?Route, ?Before, ?Goal
     path_to_route/2,         % +Path, -Route
     request/1                % -Request
@@ -33,21 +47,49 @@ HTTP routing with path expressions.
 
 :- dynamic(route/4).
 
+%! blueprint_rec(?Name, ?Prefix) is nondet.
+%
+% Retrieves currently registered blueprints.
+
+:- dynamic(blueprint_rec/2).
+
 :- meta_predicate(route_get(+, 0)).
 :- meta_predicate(route_post(+, 0)).
 :- meta_predicate(route_put(+, 0)).
 :- meta_predicate(route_del(+, 0)).
 :- meta_predicate(routes(+, +, 0)).
+:- meta_predicate(route_get_b(+, +, 0)).
+:- meta_predicate(route_post_b(+, +, 0)).
+:- meta_predicate(route_put_b(+, +, 0)).
+:- meta_predicate(route_del_b(+, +, 0)).
+:- meta_predicate(routes_b(+, +, +, 0)).
 :- meta_predicate(route_get(+, 1, 0)).
 :- meta_predicate(route_post(+, 1, 0)).
 :- meta_predicate(route_put(+, 1, 0)).
 :- meta_predicate(route_del(+, 1, 0)).
 :- meta_predicate(routes(+, +, 1, 0)).
+:- meta_predicate(route_get_b(+, +, 1, 0)).
+:- meta_predicate(route_post_b(+, +, 1, 0)).
+:- meta_predicate(route_put_b(+, +, 1, 0)).
+:- meta_predicate(route_del_b(+, +, 1, 0)).
+:- meta_predicate(routes_b(+, +, +, 1, 0)).
 :- meta_predicate(new_route(+, +, 0)).
+:- meta_predicate(new_route_b(+, +, +, 0)).
 :- meta_predicate(new_route(+, +, 1, 0)).
+:- meta_predicate(new_route_b(+, +, +, 1, 0)).
+:- meta_predicate(blueprint(+, +)).
 
 :- thread_local
     request/1.
+
+%! blueprint(+Name, +Prefix) is det.
+%
+% Registers a new blueprint for a set
+% of handlers.
+
+blueprint(Name, Prefix) :-
+    sub_atom(Prefix, 0, _, 1, Prefix1),
+    asserta(blueprint_rec(Name, Prefix1)).
 
 %! route_get(+Route, :Goal) is det.
 %
@@ -66,14 +108,14 @@ route_put(Route, Goal):-
 %! route_del(+Route, :Goal) is det.
 %
 % Registers a new DELETE route handler.
-    
+
 route_del(Route, Goal):-
     new_route(delete, Route, Goal).
 
 %! route_post(+Route, :Goal) is det.
 %
 % Registers a new POST route handler.
-    
+
 route_post(Route, Goal):-
     new_route(post, Route, Goal).
 
@@ -84,6 +126,42 @@ route_post(Route, Goal):-
 
 routes(Route, Methods, Goal) :-
     foreach(member(X, Methods), new_route(X, Route, Goal)).
+
+%! route_get_b(+Blueprint, +Route, :Goal) is det.
+%
+% Registers a new GET route handler.
+
+route_get_b(Blueprint, Route, Goal):-
+    new_route_b(Blueprint, get, Route, Goal).
+
+%! route_put_b(+Blueprint, +Route, :Goal) is det.
+%
+% Registers a new PUT route handler.
+
+route_put_b(Blueprint, Route, Goal):-
+    new_route_b(Blueprint, put, Route, Goal).
+
+%! route_del_b(+Blueprint, +Route, :Goal) is det.
+%
+% Registers a new DELETE route handler.
+
+route_del_b(Blueprint, Route, Goal):-
+    new_route_b(Blueprint, delete, Route, Goal).
+
+%! route_post_b(+Blueprint, +Route, :Goal) is det.
+%
+% Registers a new POST route handler.
+
+route_post_b(Blueprint, Route, Goal):-
+    new_route_b(Blueprint, post, Route, Goal).
+
+%! routes_b(+Blueprint, +Route, +Methods, :Goal) is det.
+%
+% Registers new route handlers for all specified
+% Methods.
+
+routes_b(Blueprint, Route, Methods, Goal) :-
+    foreach(member(X, Methods), new_route_b(Blueprint, X, Route, Goal)).
 
 %! route_get(+Route, :Before, :Goal) is det.
 %
@@ -97,7 +175,7 @@ route_get(Route, Before, Goal):-
 %
 % Registers a new PUT route handler.
 % Accepts Before goal.
-    
+
 route_put(Route, Before, Goal):-
     new_route(put, Route, Before, Goal).
     
@@ -105,7 +183,7 @@ route_put(Route, Before, Goal):-
 %
 % Registers a new DELETE route handler.
 % Accepts Before goal.
-    
+
 route_del(Route, Before, Goal):-
     new_route(delete, Route, Before, Goal).
 
@@ -113,7 +191,7 @@ route_del(Route, Before, Goal):-
 %
 % Registers a new POST route handler.
 % Accepts Before goal.
-    
+
 route_post(Route, Before, Goal):-
     new_route(post, Route, Before, Goal).    
 
@@ -122,16 +200,57 @@ route_post(Route, Before, Goal):-
 % Registers route handlers for all specified
 % Methods.
 % Accepts Before goal.
-    
+
 routes(Route, Methods, Before, Goal):-
     foreach(member(X, Methods), new_route(X, Route, Before, Goal)).
+
+%! route_get_b(+Blueprint, +Route, :Before, :Goal) is det.
+%
+% Registers a new GET route handler.
+% Accepts Before goal.
+
+route_get_b(Blueprint, Route, Before, Goal):-
+    new_route_b(Blueprint, get, Route, Before, Goal).
+
+%! route_put_b(+Blueprint, +Route, :Before, :Goal) is det.
+%
+% Registers a new PUT route handler.
+% Accepts Before goal.
+
+route_put_b(Blueprint, Route, Before, Goal):-
+    new_route_b(Blueprint, put, Route, Before, Goal).
+
+%! route_del_b(+Blueprint, +Route, :Before, :Goal) is det.
+%
+% Registers a new DELETE route handler.
+% Accepts Before goal.
+
+route_del_b(Blueprint, Route, Before, Goal):-
+    new_route_b(Blueprint, delete, Route, Before, Goal).
+
+%! route_post_b(+Blueprint, +Route, :Before, :Goal) is det.
+%
+% Registers a new POST route handler.
+% Accepts Before goal.
+
+route_post_b(Blueprint, Route, Before, Goal):-
+    new_route_b(Blueprint, post, Route, Before, Goal).
+
+%! routes_b(+Blueprint, +Route, +Methods, :Before, :Goal) is det.
+%
+% Registers route handlers for all specified
+% Methods.
+% Accepts Before goal.
+
+routes_b(Blueprint, Route, Methods, Before, Goal):-
+    foreach(member(X, Methods), new_route(Blueprint, X, Route, Before, Goal)).
 
 %! new_route(+Method, +Route, :Before, :Goal) is det.
 %
 % Registers a new method-specific route handler.
 % Does nothing when the route already exists
 % for the method.
-    
+
 new_route(Method, Route, Before, Goal):-
     must_be(atom, Method),
     check_route(Route),
@@ -139,6 +258,23 @@ new_route(Method, Route, Before, Goal):-
     ->  erase(Ref)
     ;   true),
     asserta(route(Method, Route, goal(Before), Goal)).
+
+%! new_route_b(+Blueprint, +Method, +Route, :Before, :Goal) is det.
+%
+% Registers a new method-specific route handler.
+% Does nothing when the route already exists
+% for the method.
+
+new_route_b(Blueprint, Method, Route, Before, Goal):-
+    must_be(atom, Method),
+    blueprint_rec(Blueprint, Prefix),
+    path_to_route(Prefix, Route1),
+    concat_route(Route1, Route, FullRoute),
+    check_route(FullRoute),
+    (   existing_route(Method, FullRoute, Ref)
+    ->  erase(Ref)
+    ;   true),
+    asserta(route(Method, FullRoute, goal(Before), Goal)).
 
 %! new_route(+Method, +Route, :Goal) is det.
 %
@@ -153,6 +289,23 @@ new_route(Method, Route, Goal):-
     ->  erase(Ref)
     ;   true),
     asserta(route(Method, Route, none, Goal)).
+
+%! new_route_b(+Blueprint, +Method, +Route, :Goal) is det.
+%
+% Registers a new method-specific route handler.
+% Does nothing when the route already exists
+% for the method.
+
+new_route_b(Blueprint, Method, Route, Goal):-
+    must_be(atom, Method),
+    blueprint_rec(Blueprint, Prefix),
+    path_to_route(Prefix, Route1),
+    concat_route(Route1, Route, FullRoute),
+    check_route(FullRoute),
+    (   existing_route(Method, FullRoute, Ref)
+    ->  erase(Ref)
+    ;   true),
+    asserta(route(Method, FullRoute, none, Goal)).
 
 check_route(Atom):-
     atomic(Atom), !.
@@ -238,6 +391,21 @@ route_remove(Method, Route):-
     existing_routes(Method, Route, Refs),
     remove_refs(Refs).
 
+%! route_remove_b(+Blueprint, +Method, +Route) is det.
+%
+% Removes the given route. When either Method
+% or Route or both are not set or are partially
+% instantiated then all matching routes are removed.
+% Method can be left unbound.
+
+route_remove_b(Blueprint, Method, Route):-
+    blueprint_rec(Blueprint, Prefix),
+    path_to_route(Prefix, Route1),
+    concat_route(Route1, Route, FullRoute),
+    check_route(FullRoute),
+    existing_routes(Method, FullRoute, Refs),
+    remove_refs(Refs).
+
 remove_refs([Ref|Refs]):-
     erase(Ref),
     remove_refs(Refs).
@@ -260,7 +428,7 @@ route(Request):-
     path_to_route(Path, Route),
     debug(arouter, 'dispatch: ~p ~p', [Method, Route]),
     setup_call_cleanup(
-        assertz(request(Request)),
+        asserta(request(Request)),
         dispatch(Method, Route),
         retract(request(Request))
     ).
@@ -282,7 +450,7 @@ route_with_fallbacks(Fallbacks, Request):-
     (   route(Request)
     ->  true
     ;   setup_call_cleanup(
-            assertz(request(Request)),
+            asserta(request(Request)),
             try_fallbacks(Fallbacks),
             retract(request(Request))
         )
@@ -321,6 +489,18 @@ run_handler(Before, Goal):- !,
 
 run_handler(Handler):-
     call(Handler).
+
+%! concat_route(+Route1, +Route2, -Route) is det.
+%
+% concat a/b/c and d/e to a/b/c/d/e.
+%
+
+concat_route(R1, R2, Route) :-
+    \+ compound(R2), !,
+    Route = R1/R2.
+
+concat_route(R1, /(R21, R22), Route) :-
+    concat_route(R1/R21, R22, Route).
 
 %! path_to_route(+Path, -Route) is det.
 %

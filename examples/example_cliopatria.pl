@@ -5,11 +5,12 @@
 :- use_module(library(http/http_files)).
 :- use_module(library(arouter)).
 
-:- http_handler('/example_cliopatria/',
-    route_with_fallbacks([example_cliopatria:handle_static, example_cliopatria:handle_404]),
-    [prefix]).
+:- http_handler('/example_cliopatria/', route_with_fallbacks([example_cliopatria:handle_static, example_cliopatria:handle_404]), [prefix]).
 
-:- routes(example_cliopatria/hello/Name, [get, post], handle_hello(Name)).
+:- blueprint(ex, '/example_cliopatria/').
+:- routes_b(ex, hello/Name, [get, post], handle_hello(Name)).
+
+:- routes(example_cliopatria/goodbye/Name, [get, post], handle_goodbye(Name)).
 
 handle_hello(Name) :-
     request(Request),
@@ -21,6 +22,17 @@ handle_hello(Name) :-
     ),
     format('Content-Type: text/plain; charset=UTF-8~n~n'),
     format('Hello ~w', [Name]).
+
+handle_goodbye(Name) :-
+    request(Request),
+    debug(example_cliopatria, 'Request ~w', [Request]),
+    (   memberchk(method(post), Request)
+    ->  http_read_json(Request, JSON),
+        debug(example_cliopatria, 'JSON ~w', [JSON])
+    ;   true
+    ),
+    format('Content-Type: text/plain; charset=UTF-8~n~n'),
+    format('Goodbye ~w', [Name]).
 
 handle_static :-
     setting(cpack:package_directory, PackageDir),
