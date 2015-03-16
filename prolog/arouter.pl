@@ -45,6 +45,7 @@ HTTP routing with path expressions.
 :- meta_predicate(routes(+, +, 1, 0)).
 :- meta_predicate(new_route(+, +, 0)).
 :- meta_predicate(new_route(+, +, 1, 0)).
+:- meta_predicate(fallback(0)).
 
 :- thread_local
     request/1.
@@ -276,7 +277,8 @@ route(Request):-
 % execution.
 % If no handlers could be found, fallbacks
 % will be called until one succeeds or the
-% whole predict fails.
+% whole predict fails. Fallback must be in
+% the format of fallback(Predicate).
 
 route_with_fallbacks(Fallbacks, Request):-
     (   route(Request)
@@ -290,7 +292,8 @@ route_with_fallbacks(Fallbacks, Request):-
 
 try_fallbacks([]):- false.
 try_fallbacks([H|T]):-
-    (   run_handler(H)
+    fallback(Handler) = H,
+    (   run_handler(Handler)
     ->  true
     ;   try_fallbacks(T)
     ).
