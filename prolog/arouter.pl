@@ -107,6 +107,7 @@ HTTP routing with path expressions.
 % of handlers.
 
 blueprint(Name, Prefix) :-
+    sub_atom(Prefix, _, 1, 0, '/'),
     sub_atom(Prefix, 0, _, 1, Prefix1),
     asserta(blueprint_rec(Name, Prefix1)).
 
