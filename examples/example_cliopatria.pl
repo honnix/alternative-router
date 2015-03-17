@@ -10,6 +10,7 @@
 
 :- blueprint(ex, '/example_cliopatria/').
 :- routes_b(ex, hello/Name, [get, post], handle_hello(Name)).
+:- ex.routes(hello1/Name, [get, post], handle_hello(Name)).
 
 :- routes(example_cliopatria/goodbye/Name, [get, post], handle_goodbye(Name)).
 

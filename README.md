@@ -125,6 +125,10 @@ To register route under a blueprint:
 
     :- route_get_b(b, hello/Name, handle_hello(Name)).
 
+Or:
+
+    :- b.route_get(hello/Name, handle_hello(Name)).
+
 ## List of predicates
 
 ### Adding new routes

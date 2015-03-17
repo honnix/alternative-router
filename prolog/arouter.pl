@@ -1,4 +1,5 @@
 :- module(arouter, [
+    '.'/3,                   % +Blueprint, +RouteTerm, -Result
     route/1,                 % +Request
     blueprint/2,             % +Name, +Prefix
     route_with_fallbacks/2,  % +Fallbacks, +Request
@@ -52,6 +53,7 @@ HTTP routing with path expressions.
 
 :- dynamic(blueprint_rec/2).
 
+:- meta_predicate('.'(+, +, -)).
 :- meta_predicate(route_get(+, 0)).
 :- meta_predicate(route_post(+, 0)).
 :- meta_predicate(route_put(+, 0)).
@@ -77,6 +79,27 @@ HTTP routing with path expressions.
 :- meta_predicate(new_route(+, +, 1, 0)).
 :- meta_predicate(new_route_b(+, +, +, 1, 0)).
 :- meta_predicate(blueprint(+, +)).
+
+%! op(+Precedence, +Type, :Name) is det.
+%
+% Declare it to be transparent to ensure routing
+% handlers are bound to caller's module.
+:- module_transparent('.'/3).
+
+%! '.'(+Blueprint, +Term, -Result) is det.
+%
+% This predicate offers syntactic suger when
+% register a new route under Blueprint.
+% e.g. blueprint1.routes(a/path, [get, post], handler)
+
+'.'(Blueprint, Term, Result) :-
+    blueprint_rec(Blueprint, Prefix),
+    path_to_route(Prefix, Route1),
+    Term =.. [H|[Route|T]],
+    concat_route(Route1, Route, FullRoute),
+    Term1 =.. [H|[FullRoute|T]],
+    call(Term1),
+    Result = true.
 
 %! blueprint(+Name, +Prefix) is det.
 %
