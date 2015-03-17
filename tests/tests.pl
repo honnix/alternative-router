@@ -66,6 +66,44 @@ before(Token, Goal):-
 handle_hello(X):-
     assertz(visited(hello(X))).
 
+% Multiple routes.
+
+:- routes(c, [get, post, put, delete], handle_c).
+
+handle_c:-
+    assertz(visited(get(c))),
+    assertz(visited(post(c))),
+    assertz(visited(put(c))),
+    assertz(visited(del(c))).
+
+% Multiple routes. Handlers with a before action.
+
+:- routes(d, [get, post, put, delete], before_list([get_d, post_d, put_d, del_d]), before_handle_d).
+
+before_list(List, Goal) :-
+    foreach(member(X, List), assertz(before(X))),
+    call(Goal).
+
+before_handle_d:-
+    assertz(visited(get(d))),
+    assertz(visited(post(d))),
+    assertz(visited(put(d))),
+    assertz(visited(del(d))).
+
+% Blueprint.
+
+:- blueprint(b1, '/x/y/').
+:- b1.route_get(e, get_e).
+
+get_e:-
+    assertz(visited(get(e))).
+
+:- blueprint(b2, '/x/z/').
+:- route_get_b(b2, f, get_f).
+
+get_f:-
+    assertz(visited(get(f))).
+
 % Custom method.
 
 :- new_route(options, test/custom, test_custom).
@@ -192,6 +230,50 @@ test(hello, [ setup(clean) ]):-
     route([ path('/hello/world'), method(get) ]),
     visited(hello(world)).
 
+test(get_c, [ setup(clean) ]):-
+    route([ path('/c'), method(get) ]),
+    visited(get(c)).
+
+test(post_c, [ setup(clean) ]):-
+    route([ path('/c'), method(post) ]),
+    visited(post(c)).
+
+test(put_c, [ setup(clean) ]):-
+    route([ path('/c'), method(put) ]),
+    visited(put(c)).
+
+test(del_c, [ setup(clean) ]):-
+    route([ path('/c'), method(delete) ]),
+    visited(del(c)).
+
+test(before_get_d, [ setup(clean) ]):-
+    route([ path('/d'), method(get) ]),
+    visited(get(d)),
+    before(get_d).
+
+test(before_post_d, [ setup(clean) ]):-
+    route([ path('/d'), method(post) ]),
+    visited(post(d)),
+    before(post_d).
+
+test(before_put_d, [ setup(clean) ]):-
+    route([ path('/d'), method(put) ]),
+    visited(put(d)),
+    before(put_d).
+
+test(before_del_d, [ setup(clean) ]):-
+    route([ path('/d'), method(delete) ]),
+    visited(del(d)),
+    before(del_d).
+
+test(get_e, [ setup(clean) ]):-
+    route([ path('/x/y/e'), method(get) ]),
+    visited(get(e)).
+
+test(get_f, [ setup(clean) ]):-
+    route([ path('/x/z/f'), method(get) ]),
+    visited(get(f)).
+
 test(custom, [ setup(clean) ]):-
     route([ path('/test/custom'), method(options) ]),
     visited(custom).
@@ -206,5 +288,16 @@ test(remove):-
     (   route(get, test/remove, _, _)
     ->  fail
     ;   true).
+
+test(remove_blueprint):-
+    route_get_b(b1, test/remove, true),
+    route(get, x/y/test/remove, _, _), !,
+    route_remove_b(b1, _, test/remove),
+    (   route(get, x/y/test/remove, _, _)
+    ->  fail
+    ;   true).
+
+test(wrong_prefix):-
+    \+ blueprint(b_name, '/a/b').
 
 :- end_tests(arouter).
