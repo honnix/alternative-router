@@ -29,8 +29,7 @@
     route_remove/2,          % +Method, +Route
     route_remove_b/3,        % +Blueprint, +Method, +Route
     route/4,                 % ?Method, ?Route, ?Before, ?Goal
-    path_to_route/2,         % +Path, -Route
-    request/1                % -Request
+    path_to_route/2          % +Path, -Route
 ]).
 
 /** <module> Alternative HTTP routing
@@ -78,9 +77,6 @@ HTTP routing with path expressions.
 :- meta_predicate(new_route(+, +, 1, 0)).
 :- meta_predicate(new_route_b(+, +, +, 1, 0)).
 :- meta_predicate(blueprint(+, +)).
-
-:- thread_local
-    request/1.
 
 %! blueprint(+Name, +Prefix) is det.
 %
@@ -427,11 +423,7 @@ route(Request):-
     memberchk(path(Path), Request),
     path_to_route(Path, Route),
     debug(arouter, 'dispatch: ~p ~p', [Method, Route]),
-    setup_call_cleanup(
-        asserta(request(Request)),
-        dispatch(Method, Route),
-        retract(request(Request))
-    ).
+    dispatch(Method, Route).
 
 %! route_with_fallbacks(+Fallbacks, +Request) is semidet.
 %
@@ -449,11 +441,7 @@ route(Request):-
 route_with_fallbacks(Fallbacks, Request):-
     (   route(Request)
     ->  true
-    ;   setup_call_cleanup(
-            asserta(request(Request)),
-            try_fallbacks(Fallbacks),
-            retract(request(Request))
-        )
+    ;   try_fallbacks(Fallbacks)
     ).
 
 try_fallbacks([]):- false.
