@@ -41,6 +41,26 @@ Make fallback to `http_dispatch/1` like this:
     
 and use `handle_request/1` as the handler in `http_server`.
 
+## Routing with fallbacks
+
+To route with fallbacks:
+
+    :- http_server(route_with_fallbacks([module:fallback1, module:fallback2]), [port(8008)]).
+
+If no matched route could be found, fallbacks will be tried according to the order until one
+succeeds or routing fails completely. This is particularly useful when combining routing table,
+static content handler and 404 handler together.
+
+    :- http_server(route_with_fallbacks([module:handle_static, module:handle_404]), [port(8008)]).
+
+    handle_static :-
+        http_current_request(Request),
+        http_reply_from_files('/path/to/static/content', [], Request).
+
+    handle_404 :-
+        http_current_request(Request),
+        http_404([], Request).
+
 ## Before-handler
 
 Routes can have intermediate goals. The following example is cheking auth information
