@@ -85,6 +85,26 @@ other. Routes are structurally equivalent when:
 
 Structural equivalence is used for detecting duplicate rules. This plays nice with the `make/0` goal.
 
+## Trailing /
+
+To define a route with trailing /:
+
+    :- route_get(hello/Name/'', handle_hello(Name)).
+
+## Blueprint
+
+Got the idea from [Flask](http://flask.pocoo.org/).
+
+To register a blueprint:
+
+    :- blueprint(b, '/a/long/prefix/').
+
+Trailing / is required.
+
+To register route under a blueprint:
+
+    :- route_get_b(b, hello/Name, handle_hello(Name)).
+
 ## List of predicates
 
 ### Adding new routes
@@ -97,6 +117,18 @@ Structural equivalence is used for detecting duplicate rules. This plays nice wi
 
 `route_post(+Route, :Goal)` registers a new POST handler.
 
+`routes(+Route, Methods, :Goal)` registers routes according to Methods.
+
+`route_get_b(+Blueprint, +Route, :Goal)` registers a new GET handler.
+
+`route_put_b(+Blueprint,+Route, :Goal)` registers a new PUT handler.
+
+`route_del_b(+Blueprint,+Route, :Goal)` registers a new DELETE handler.
+
+`route_post_b(+Blueprint,+Route, :Goal)` registers a new POST handler.
+
+`routes_b(+Blueprint,+Route, Methods, :Goal)` registers routes according to Methods.
+
 `route_get(+Route, :Before, :Goal)` registers a new GET handler with a before action.
 
 `route_put(+Route, :Before, :Goal)` registers a new PUT handler with a before action.
@@ -105,16 +137,32 @@ Structural equivalence is used for detecting duplicate rules. This plays nice wi
 
 `route_post(+Route, :Before, :Goal)` registers a new POST handler with a before action.
 
+`routes(+Route, +Methods, :Bedore, :Goal)` register routes according to Methods with a before action.
+
+`route_get_b(+Blueprint,+Route, :Before, :Goal)` registers a new GET handler with a before action.
+
+`route_put_b(+Blueprint,+Route, :Before, :Goal)` registers a new PUT handler with a before action.
+
+`route_del_b(+Blueprint,+Route, :Before, :Goal)` registers a new DELETE handler with a before action.
+
+`route_post_b(+Blueprint,+Route, :Before, :Goal)` registers a new POST handler with a before action.
+
+`routes_b(+Blueprint,+Route, +Methods, :Bedore, :Goal)` register routes according to Methods with a before action.
+
 `new_route(+Method, +Route, :Goal)` registers a new custom method handler.
 
+`new_route_b(+Blueprint, +Method, +Route, :Goal)` registers a new custom method handler.
+
 `new_route(+Method, +Route, :Before, :Goal)` registers a new custom method handler with a before action.
+
+`new_route_b(+Blueprint, +Method, +Route, :Before, :Goal)` registers a new custom method handler with a before action.
 
 All predicates above will throw an error when the `Route` does not contain the
 suitable term.
 
 Route handler predicates can take variables from the route. Example:
 
-    :- http_get(post/show/Slug, post_show(Slug)).
+    :- route_get(post/show/Slug, post_show(Slug)).
     
     post_show(Slug):-
         ...
@@ -137,7 +185,7 @@ Use the `route(?Method, ?Route, ?Before, ?Goal)` predicate.
 ### Removing routes
 
 Use the `route_remove(Method, Route)` predicate. Both arguments
-can be unbound or partially instantiated.
+can be unbound or partially instantiated. Or `route_remove_b(Blueprint, Method, Route)`.
 
 ## Installation
 
