@@ -92,14 +92,13 @@ HTTP routing with path expressions.
 % register a new route under Blueprint.
 % e.g. blueprint1.routes(a/path, [get, post], handler)
 
-'.'(Blueprint, Term, Result) :-
+'.'(Blueprint, Term, true) :-
     blueprint_rec(Blueprint, Prefix),
     path_to_route(Prefix, Route1),
     Term =.. [H|[Route|T]],
     concat_route(Route1, Route, FullRoute),
     Term1 =.. [H|[FullRoute|T]],
-    call(Term1),
-    Result = true.
+    call(Term1).
 
 %! blueprint(+Name, +Prefix) is det.
 %
