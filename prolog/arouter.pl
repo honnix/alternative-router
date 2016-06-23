@@ -273,10 +273,7 @@ routes_b(Blueprint, Route, Methods, Before, Goal):-
 new_route(Method, Route, Before, Goal):-
     must_be(atom, Method),
     check_route(Route),
-    (   existing_route(Method, Route, Ref)
-    ->  erase(Ref)
-    ;   true),
-    asserta(route(Method, Route, goal(Before), Goal)).
+    replace_add_route(Method, Route, goal(Before), Goal).
 
 %! new_route_b(+Blueprint, +Method, +Route, :Before, :Goal) is det.
 %
@@ -304,10 +301,47 @@ new_route_b(Blueprint, Method, Route, Before, Goal):-
 new_route(Method, Route, Goal):-
     must_be(atom, Method),
     check_route(Route),
-    (   existing_route(Method, Route, Ref)
-    ->  erase(Ref)
-    ;   true),
-    asserta(route(Method, Route, none, Goal)).
+    replace_add_route(Method, Route, none, Goal).
+
+% Replaces matching route in one step
+% or adds a new route. Does not change
+% the original order of routes.
+
+replace_add_route(Method, Route, Before, Goal):-
+    routes_array(Array),
+    (   array_route(Array, Method, Route, Index)
+    ->  setarg(Index, Array, route(Method, Route, Before, Goal)),
+        copy_term(Array, Copy),
+        overwrite_routes(Copy)
+    ;   asserta(route(Method, Route, Before, Goal))).
+
+% Overwrites routes from the
+% given array.
+
+overwrite_routes(Array):-
+    Array =.. [_|List],
+    retractall(route(_, _, _, _)),
+    maplist(assertz, List).
+
+% Returns term with routes.
+% Used as an array to simplify
+% manipulation using indexes.
+
+routes_array(Routes):-
+    findall(
+        route(Method, Route, Before, Goal),
+        route(Method, Route, Before, Goal),
+        List),
+    Routes =.. [array|List].
+
+% Checks whether the given array of
+% routes has one with the matching
+% method and route. Index is 1-based.
+
+array_route(Array, Method, Route, Index):-
+    \+ atom(Array),
+    arg(Index, Array, route(Method, ERoute, _, _)),
+    route_route_match(Route, ERoute).
 
 %! new_route_b(+Blueprint, +Method, +Route, :Goal) is det.
 %
@@ -483,11 +517,34 @@ try_fallbacks([H|T]):-
 % execution.
 
 dispatch(Method, Path):-
-    route(Method, Route, Before, Goal),
-    route_path_match(Route, Path), !,
+    path_route_matches(Method, Path, Matches),
+    try_next_match(Matches, Method, Path).
+
+try_next_match([Before-Goal|Matches], Method, Path):-
+    catch(try_run_handler(Before, Goal, Method, Path), Error, true),
+    (   nonvar(Error), Error = arouter_next
+    ->  try_next_match(Matches, Method, Path)
+    ;   (   nonvar(Error)
+        ->  throw(Error)
+        ;   true)).
+
+:- meta_predicate(try_run_handler(+, 0, +, +)).
+
+try_run_handler(Before, Goal, Method, Path):-
     (   run_handler(Before, Goal)
     ->  true
     ;   throw(error(handler_failed(Method, Path)))).
+
+%! path_route_matches(+Method, +Path, -Matches) is det.
+%
+% Finds list of matches as pairs of Before-Goal.
+
+path_route_matches(Method, Path, Matches):-
+    findall(Before-Goal,
+        (
+            route(Method, Route, Before, Goal),
+            route_path_match(Route, Path)),
+        Matches).
 
 :- meta_predicate(run_handler(+, 0)).
 

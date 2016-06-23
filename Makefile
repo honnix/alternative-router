@@ -1,6 +1,6 @@
 version:=$(shell swipl -q -s pack -g 'version(V),writeln(V)' -t halt)
 packfile=arouter-$(version).tgz
-remote=packs@packs.rlaanemets.com:/usr/share/nginx/packs.rlaanemets.com/alternative-router
+remote=www-data@packs.rlaanemets.com:/sites/packs.rlaanemets.com/public/alternative-router
 
 all::
 check::
