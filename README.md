@@ -117,19 +117,29 @@ To define a route with trailing /:
 
 Got the idea from [Flask](http://flask.pocoo.org/).
 
-To register a blueprint:
+To register a blueprint (with or without a trailing / are both fine):
+
+    :- blueprint(b, '/a/long/prefix').
+
+Or:
 
     :- blueprint(b, '/a/long/prefix/').
 
-Trailing / is required.
-
-To register route under a blueprint:
+To register a route under the blueprint:
 
     :- route_get_b(b, hello/Name, handle_hello(Name)).
 
 Or:
 
     :- b.route_get(hello/Name, handle_hello(Name)).
+
+To register a route directly under the blueprint:
+
+    :- route_get_b(_, handle_hello(Name)).
+
+Or:
+
+    :- b.route_get(_, handle_hello(Name)).
 
 ## Non-deterministic routing
 

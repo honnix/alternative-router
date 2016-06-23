@@ -315,9 +315,6 @@ test(remove_blueprint):-
     ->  fail
     ;   true).
 
-test(wrong_prefix):-
-    \+ blueprint(b_name, '/a/b').
-
 test(arouter_next, [ setup(clean) ]):-
     \+ generic,
     route([ path('/nondet/specific'), method(get) ]),
