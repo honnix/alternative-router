@@ -96,8 +96,10 @@ HTTP routing with path expressions.
     blueprint_rec(Blueprint, Prefix),
     path_to_route(Prefix, Route1),
     Term =.. [H|[Route|T]],
-    (   var(Route)
+    (   Route == ''
     ->  FullRoute = Route1
+    ;   Route == /
+    ->  concat_route(Route1, '', FullRoute)
     ;   concat_route(Route1, Route, FullRoute)
     ),
     Term1 =.. [H|[FullRoute|T]],
@@ -109,7 +111,7 @@ HTTP routing with path expressions.
 % of handlers.
 
 blueprint(Name, Prefix) :-
-    sub_atom(Prefix, _, 1, 0, '/'), !,
+    sub_atom(Prefix, _, 1, 0, /), !,
     sub_atom(Prefix, 0, _, 1, Prefix1),
     asserta(blueprint_rec(Name, Prefix1)).
 blueprint(Name, Prefix) :-
@@ -290,8 +292,10 @@ new_route_b(Blueprint, Method, Route, Before, Goal):-
     must_be(atom, Method),
     blueprint_rec(Blueprint, Prefix),
     path_to_route(Prefix, Route1),
-    (   var(Route)
+    (   Route == ''
     ->  FullRoute = Route1
+    ;   Route == /
+    ->  concat_route(Route1, '', FullRoute)
     ;   concat_route(Route1, Route, FullRoute)
     ),
     check_route(FullRoute),
@@ -361,8 +365,10 @@ new_route_b(Blueprint, Method, Route, Goal):-
     must_be(atom, Method),
     blueprint_rec(Blueprint, Prefix),
     path_to_route(Prefix, Route1),
-    (   var(Route)
+    (   Route == ''
     ->  FullRoute = Route1
+    ;   Route == /
+    ->  concat_route(Route1, '', FullRoute)
     ;   concat_route(Route1, Route, FullRoute)
     ),
     check_route(FullRoute),
